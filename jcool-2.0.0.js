@@ -1,25 +1,11 @@
 (function(w,d){
 	'use strict';
+	if(!d.querySelectorAll){
+		alert('Ваш браузер устарел, пожалуйста, обновите браузер чтобы продолжить работу с сайтом');
+		return false;
+	}
 	function App(obj=null,t=this){
-		if(typeof obj==='string'){
-			if(d.querySelectorAll){
-				t.obj=d.querySelectorAll?d.querySelectorAll(obj):null;
-			}else{
-				switch(obj.charAt(0)){
-					case '.':
-					
-					break;
-					case '#':
-					
-					break;
-					default:
-					
-					break;
-				}
-			}
-		}else{
-			t.obj=obj;
-		}
+		t.obj=typeof obj==='string'?d.querySelectorAll(obj):obj;
 		t.ready=function(fn=null){
 			if(obj!==d||!fn)return;
 			d.addEventListener('DOMContentLoaded',fn,false);
@@ -97,7 +83,7 @@
 				t.obj.innerHTML='';
 			}
 		};
-		t.on=function(a,b,c=null,elem=null){// click func			click elem func
+		t.on=function(a,b,c=null,elem=null){
 			if(c&&typeof c==='function'){
 				d.addEventListener(a,function(e){
 					elem=new App(b).obj;
@@ -109,15 +95,36 @@
 					
 				},false);
 			}else if(typeof obj==='string'){
-				for(let i=0;i<t.obj.length;++i){
-					t.obj[i].addEventListener(a,function(e){
-						return b.apply(e.target,arguments);
-					},false);
-				}
+				let i=0,tmr=setInterval(function(){
+					if(i<t.obj.length){
+						t.obj[i].addEventListener(a,function(e){
+							return b.apply(e.target,arguments);
+						},false);
+						++i;
+					}else{
+						clearInterval(tmr);
+					}
+				},20);
 			}else{
 				obj.addEventListener(a,function(e){
 					return b.apply(e.target,arguments);
 				},false);
+			}
+		};
+		t.off=function(a,b,c=null,elem=null){
+			if(c&&typeof c==='function'){
+				d.removeEventListener(a,function(){});
+			}else if(typeof obj==='string'){
+				let i=0,tmr=setInterval(function(){
+					if(i<t.obj.length){
+						t.obj[i].removeEventListener(a,function(){});
+						++i;
+					}else{
+						clearInterval(tmr);
+					}
+				},20);
+			}else{
+				obj.removeEventListener(a,function(){});
 			}
 		};
 		t.each=function(a){
@@ -187,18 +194,35 @@
 				return a;
 			}
 		};
-		t.attr=function(a,b=null){ /////////////////////////////////////////////////////
+		t.attr=function(a,b=null){
 			if(typeof obj==='string'||obj==='object'){
-				return b?t.obj[0].setAttribute(a,b):t.obj[0].getAttribute(a);
+				return b?(t.obj[0].setAttribute(a,b), t):t.obj[0].getAttribute(a);
 			}else{
-				return b?t.obj.setAttribute(a,b):t.obj.getAttribute(a);
+				return b?(t.obj.setAttribute(a,b), t):t.obj.getAttribute(a);
 			}
 		};
+		t.checked=function(){
+			if(typeof obj==='string'||obj==='object'){
+				return t.obj[0].checked||null;
+			}else{
+				return t.obj.checked||null;
+			}
+		};
+		t.removeAttr=function(a){
+			if(typeof obj==='string'||obj==='object'){
+				for(let i=0;i<t.obj.length;++i){
+					t.obj[i].removeAttribute(a);
+				}
+			}else{
+				t.obj.removeAttribute(a);
+			}
+			return t;
+		}
 		t.css=function(a={}){
 			if(typeof obj==='string'||obj==='object'){
 				for(let i=0;i<t.obj.length;++i){
 					for(let b in a){
-						if(t.obj.getAttribute('style')){
+						if(t.obj[i].getAttribute('style')||null){
 							t.obj[i].setAttribute('style', t.obj[i].getAttribute('style')+b+':'+a[b]);
 						}else{
 							t.obj[i].setAttribute('style', b+':'+a[b]);
@@ -207,7 +231,7 @@
 				}
 			}else{
 				for(let b in a){
-					if(t.obj.getAttribute('style')){
+					if(t.obj.getAttribute('style')||null){
 						t.obj.setAttribute('style', t.obj.getAttribute('style')+b+':'+a[b]);
 					}else{
 						t.obj.setAttribute('style', b+':'+a[b]);
@@ -300,6 +324,45 @@
 			}
 			return t;
 		};
+		t.offset=function(){
+			if(typeof obj==='string'||obj==='object'){
+				return t.obj[0].getBoundingClientRect();
+			}else{
+				return t.obj.getBoundingClientRect();
+			}
+			return t;
+		};
+		t.top=function(){
+			if(obj!==w) return null;
+			return w.scrollY;
+		};
+		t.height=function(){
+			if(obj===w){
+				return w.innerHeight;
+			}else if(obj===d){
+				return d.innerHeight;
+			}else if(typeof obj==='string'||obj==='object'){
+				return t.obj[0].scrollHeight;
+			}else{
+				return t.obj.scrollHeight;
+			}
+			return t;
+		};
+		t.trigger=function(a=null){
+			if(!a)return;
+			if(obj===w){
+				w.dispatchEvent(new Event(a));
+			}else if(obj===d){
+				d.dispatchEvent(new Event(a));
+			}else if(typeof obj==='string'||obj==='object'){
+				for(let i=0;i<t.obj.length;++i){
+					t.obj[0].dispatchEvent(new Event(a));
+				}
+			}else{
+				t.obj.dispatchEvent(new Event(a));
+			}
+			return t;
+		};
 		return typeof obj==='string'?t:t;
 		function getFadeIn(a,b,s=null,t=null){
 			s = a.style;
@@ -340,18 +403,16 @@
 			return t;
 		}
 	}
-	let $=w.$=function(a=null){return new App(a);};
+	let $=w.$=function(a=null){return new App(a);},file;
 	function Set(){}
 	Set.prototype={
 		that:this,
-		// console views this arguments
 		log:function(){
 			for(let i=0;i<arguments.length;++i){
 				console.info(arguments[i]);
 			}
 			return this;
 		},
-		// a = url		b = object (data, success fn, error fn)		fn = callback (optional)
 		ajax:function(a,b=null,fn=null,c=null){
 			c=new XMLHttpRequest();
 			c.open('POST',a,true);
@@ -371,10 +432,9 @@
 			}
 			return typeof fn==='function'?fn():this;
 		},
-		// a = event (open, close, change)		b = object (overlay element, modal element, close time)
-		modal:function(a,b=null,fn=null,d=null){
+		modal:function(a,b=null,fn=null,d=null){// a = event (open, close, change)		b = object (over - element, box - modal element, close - time)
 			let that=this;
-			d=b.over?b.over==='none'?null:b.over:'.overlay';
+			d=b.over?(b.over==='none'?null:b.over):'.overlay';
 			if(a==='open'){
 				if(d)$(d).fadeIn();
 				$(b.box).fadeIn();
@@ -395,16 +455,13 @@
 			}
 			return typeof fn==='function'?fn():this;
 		},
-		// json data for parse
-		jsp:function(a){
+		jsp:function(a){// json data for parse
 			return JSON.parse(a);
 		},
-		// json data for striginfy
-		jstr:function(a){
+		jstr:function(a){// json data for striginfy
 			return JSON.stringify(a);
 		},
-		// a = data object		b = formdata object (optional)
-		form:function(a,b=null,c=null){
+		form:function(a,b=null,c=null){// a = data object		b = formdata object (optional)
 			b=b||new FormData();
 			for(c in a){
 				if(a.hasOwnProperty(c)){
@@ -413,16 +470,14 @@
 			}
 			return b;
 		},
-		// a = files		b = formdata object (optional)
-		formFiles:function(a,b=null){
+		formFiles:function(a,b=null){// a = files		b = formdata object (optional)
 			b=b||new FormData();
 			for(var i = 0;i < a.length; ++i){
 				b.append('file['+i+']',a[i]);
 			}
 			return b;
 		},
-		// a = object data serialized
-		validate:function(a,b=null,c=0){
+		validate:function(a,b=null,c=0){// a = object data serialized
 			b=(a.obj[0]||a.obj).querySelectorAll('input, select, textarea');
 			for(let key in b){
 				if(isFinite(key)){
@@ -509,6 +564,15 @@
 			}
 			return this;
 		},
+		bgImage:function(a,b){
+			if(b.type.match(/image.*/)){
+				var reader=new FileReader();
+				reader.onload=function(e){
+					d.querySelector(a).setAttribute('style', 'background-image: url(' + e.target.result + ');');
+				};
+				reader.readAsDataURL(b);
+			}
+		},
 		copy:function(a=null){
 			if(!a)return 'Нет данных для копирования';
 			a.obj.select();
@@ -523,7 +587,18 @@
 		sleep:function(a,fn=null){
 			setTimeout(fn,a);
 			return this;
+		},
+		countPlus:function(a,b={},c=0){
+			b.step=parseFloat(a.dataset.count/100);
+			b.fn=setInterval(function(){
+				if(c+b.step>=parseFloat(a.dataset.count)){
+					a.innerHTML=a.dataset.count;
+					clearInterval(b.fn);
+				}
+				c+=b.step;
+				a.innerHTML=parseInt(c);
+			},a.dataset.duration/100);
 		}
 	};
-	w.jRun=new Set();
+	w.fn=new Set();
 })(window,document);
