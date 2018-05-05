@@ -475,27 +475,27 @@
 			return typeof fn==='function'?fn():this;
 		},
 		modal:function(a){// a = event (open, close, change)		b = object (over - element, box - modal element, close - time)
-			let that=this, b=arguments[1]||null, fn=arguments[2]||null, d;
-			d=b.over?(b.over==='none'?null:b.over):'.overlay';
-			if(a==='open'){
+			let that=this, fn=arguments[1]||null, d;
+			d=a.over&&a.over!='undefined'?(a.over==true?'.overlay':a.over):null;
+			if(a.action=='open'){
 				if(d)$(d).fadeIn();
-				$(b.box).fadeIn();
-				if(b.close){
+				$(a.box).fadeIn();
+				if(a.close){
 					setTimeout(function(){
 						that.modal('close',{
-							box:b.box,
+							box:a.box,
 							over:d
 						});
-					},b.close*1000);
+					},a.close*1000);
 				}
-			}else if(a==='close'){
+			}else if(a.action=='close'){
 				if(d)$(d).fadeOut();
-				$(b.box).fadeOut();
-			}else if(a==='change'){
-				$(b.box).fadeOut();
-				$(b.new).fadeIn();
+				$(a.box).fadeOut();
+			}else if(a.action=='change'){
+				$(a.box).fadeOut();
+				$(a.new).fadeIn();
 			}
-			return typeof fn==='function'?fn():this;
+			return typeof fn=='function'?fn():this;
 		},
 		jsp:function(a){// json data for parse
 			return JSON.parse(a);
@@ -505,15 +505,12 @@
 		},
 		form:function(a){// a = data object		b = formdata object (optional)
 			let b=arguments[1]||new FormData();
-			console.info(a);
 			for(let key in a)if(a.hasOwnProperty(key))b.append(key,a[key]);
 			return b;
 		},
 		formFiles:function(a){// a = files		b = formdata object (optional)
 			let b=arguments[1]||new FormData();
-			for(var i = 0;i < a.length; ++i){
-				b.append('file['+i+']',a[i]);
-			}
+			for(var i = 0;i < a.length; ++i)b.append('file['+i+']',a[i]);
 			return b;
 		},
 		validate:function(a){// a = object data serialized
